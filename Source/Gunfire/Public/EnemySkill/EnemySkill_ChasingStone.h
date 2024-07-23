@@ -34,4 +34,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ExplosionEffect;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ADamageAmt> DamageAmtFactory;
 };

@@ -74,6 +74,10 @@ public:
 	UPROPERTY(EditAnywhere)
 	FTimerHandle WeaponEffectTimerHandle;
 
+	//스폰이펙트를 위한 나이아가라시스템 변수 선언
+	UPROPERTY(EditAnywhere, Category = Effects)
+	class UNiagaraComponent* WeaponSpawnEffect;
+
 	//Weapon 충돌체 추가
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* WeaponBoxComp;
@@ -82,5 +86,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GunMesh)
 	class USkeletalMeshComponent* GunMesh;
 
+	//Weapon SFX 추가
+	//총기 발사 Sound
+	UPROPERTY(EditAnywhere)
+	class USoundBase* WeaponShotSound;
+
+	//총기 NoWeaponSound(탄창 비었을때)
+	UPROPERTY(EditAnywhere)
+	class USoundBase* WeaponNoBulletSound;
+
+	//총기 Reload Sound 
+	UPROPERTY(EditAnywhere)
+	class USoundBase* WeaponReloadSound;
 
 };

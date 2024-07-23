@@ -13,6 +13,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Widget/EnemyWidget.h"
 #include "Component/EnemyStatComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 ABossEnemy::ABossEnemy()
 {
@@ -84,7 +85,7 @@ void ABossEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	if (EnemyHPStat)
-		EnemyHPStat->InitHP(5000);
+		EnemyHPStat->InitHP(7000);
 	bPillar = false;
 	bLaser = false;
 	CurrentPattern = 0;
@@ -189,6 +190,8 @@ void ABossEnemy::PatternRockPillar()
 void ABossEnemy::PatternChasingStone()
 {
 	FVector Center = StoneSpawnPoint->GetComponentLocation();
+	// 소환 사운드 재생 코드 작성
+	UGameplayStatics::PlaySound2D(GetWorld(), ChasingStoneSound);
 
 	UE_LOG(LogTemp, Warning, TEXT("PatternChasingStone"));
 	for (int32 i = 0; i < 7; i++)
@@ -203,7 +206,6 @@ void ABossEnemy::PatternChasingStone()
 		FVector SpawnLocation = FVector(X, Y, Center.Z);
 		GetWorld()->SpawnActor<AEnemySkill_ChasingStone>(ChasingStoneClass, SpawnLocation, FRotator::ZeroRotator);
 	}
-
 
 	FTimerHandle CooldownTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &ABossEnemy::EndPattern, 5.0f, false);

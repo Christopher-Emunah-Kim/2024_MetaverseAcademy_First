@@ -13,6 +13,10 @@
 #include "Widget/EnemyWidget.h"
 #include "Component/EnemyStatComponent.h"
 #include "AnimInstance/EnemyAnimInstance.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/DamageEvents.h"
+#include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 AGolemBossEnemy::AGolemBossEnemy()
 {
@@ -23,6 +27,7 @@ AGolemBossEnemy::AGolemBossEnemy()
 	{
 		RockPillarClass = StonePillarBP.Class;
 	}
+
 	// 초기화
 	static ConstructorHelpers::FClassFinder<AActor> ChasingStoneBP(TEXT("/Game/BluePrints/Enemy/Pattern/BP_EnemyChasingStone.BP_EnemyChasingStone_C"));
 	if (ChasingStoneBP.Succeeded())
@@ -57,23 +62,46 @@ AGolemBossEnemy::AGolemBossEnemy()
 	// 씬컴포넌트 초기화
 	Heart = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Heart"));
 	Heart->SetupAttachment(GetMesh(), TEXT("Heart"));
-	// 좌표 변경(X=14.000000,Y=0.000000,Z=20.000000)
-	Heart->SetRelativeLocation(FVector(14.0f, 0.0f, 20.0f));
+
+	LeftPunch = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftPunch"));
+	LeftPunch->SetupAttachment(GetMesh(), TEXT("LeftPunch"));
+
+	RightPunch = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RightPunch"));
+	RightPunch->SetupAttachment(GetMesh(), TEXT("RightPunch"));
 
 	// 씬컴포넌트 초기화
 	StoneSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("StoneSpawnPoint"));
 	StoneSpawnPoint->SetupAttachment(GetMesh(), TEXT("StoneSpawnPoint"));
 
-	// 씬컴포넌트 좌표 변경
-	StoneSpawnPoint->SetRelativeLocation(FVector(70.0f, 0.0f, 50.0f));
+	// 크리티컬 포인트 박스 메쉬 만들기SocketCopyPasteBuffer
 
-	LeftPunch = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftHand"));
-	LeftPunch->SetupAttachment(GetMesh(), TEXT("LeftHand"));
+	EyeBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("EyeBoxComponent"));
+	EyeBoxComponent->SetupAttachment(GetMesh(), TEXT("EyeBox"));
+	EyeBoxComponent->SetBoxExtent(FVector(500.0f, 100.0f, 100.0f));
 
-	RightPunch = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RightHand"));
-	RightPunch->SetupAttachment(GetMesh(), TEXT("RightHand"));
+	FAttachmentTransformRules Rules(EAttachmentRule::SnapToTarget, true);
+	EyeBoxComponent->AttachToComponent(GetMesh(), Rules, TEXT("Bip001_HeadSocket"));
+	EyeBoxComponent->ComponentTags.Add(FName("Head"));
+	// 심장 박스 메쉬 만들기
 
-	bPillar = false;
+	HeartBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("HeartBoxComponent"));
+	HeartBoxComponent->SetupAttachment(GetMesh(), TEXT("HeartBox"));
+	HeartBoxComponent->SetBoxExtent(FVector(500.0f, 500.0f, 500.0f));
+	HeartBoxComponent->AttachToComponent(GetMesh(), Rules, TEXT("Bip001_Spine1Socket"));
+	//테그 추가
+	HeartBoxComponent->ComponentTags.Add(FName("Head"));
+
+	// 오른 손 스메쉬 생성
+	SmashEffectPointRight = CreateDefaultSubobject<USceneComponent>(TEXT("SmashEffectPointRight"));
+	SmashEffectPointRight->SetupAttachment(RootComponent);
+	// 위치 2500, -1000
+	SmashEffectPointRight->SetRelativeLocation(FVector(2500.0f, -1000.0f, 0.0f));
+
+	// 왼 손 스메쉬 생성
+	SmashEffectPointLeft = CreateDefaultSubobject<USceneComponent>(TEXT("SmashEffectPointLeft"));
+	SmashEffectPointLeft->SetupAttachment(RootComponent);
+	// 위치 2500, 1000
+	SmashEffectPointLeft->SetRelativeLocation(FVector(2500.0f, 1000.0f, 0.0f));
 
 	PatternList.Add(0);
 	PatternList.Add(1);
@@ -100,6 +128,14 @@ void AGolemBossEnemy::BeginPlay()
 		EnemyWidget->SetDecreaseRate(0.1f);
 		EnemyWidget->BindEnemyStat(EnemyHPStat);
 	}
+}
+
+void AGolemBossEnemy::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	// 클리어 타이머
+	GetWorld()->GetTimerManager().ClearTimer(CooldownTimerHandle);
 }
 
 void AGolemBossEnemy::PostInitializeComponents()
@@ -230,6 +266,10 @@ void AGolemBossEnemy::DoSmash()
 			rock->OnExplosion();
 		}
 	}
+
+	// 스메쉬 위치에 스메쉬 생성
+	GetWorld()->SpawnActor<AActor>(SmashEffectFactory, SmashEffectPointRight->GetComponentLocation(), SmashEffectPointRight->GetComponentRotation());
+	GetWorld()->SpawnActor<AActor>(SmashEffectFactory, SmashEffectPointLeft->GetComponentLocation(), SmashEffectPointLeft->GetComponentRotation());
 	
 	EndPattern();
 }
@@ -260,7 +300,6 @@ void AGolemBossEnemy::DoSummon()
 		}
 	}
 
-	FTimerHandle CooldownTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &AGolemBossEnemy::EndPattern, 5.0f, false);
 }
 
@@ -279,6 +318,8 @@ void AGolemBossEnemy::DoChasingStone()
 	bChasingStone = false;
 	FVector Center = StoneSpawnPoint->GetComponentLocation();
 
+	UGameplayStatics::PlaySound2D(GetWorld(), ChasingStoneSound);
+
 	UE_LOG(LogTemp, Warning, TEXT("PatternChasingStone"));
 	for (int32 i = 0; i < 7; i++)
 	{
@@ -293,8 +334,6 @@ void AGolemBossEnemy::DoChasingStone()
 		GetWorld()->SpawnActor<AEnemySkill_ChasingStone>(ChasingStoneClass, SpawnLocation, FRotator::ZeroRotator);
 	}
 
-
-	FTimerHandle CooldownTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &AGolemBossEnemy::EndPattern, 5.0f, false);
 }
 
@@ -302,6 +341,7 @@ void AGolemBossEnemy::DoPunchReady()
 {
 	//bRocket = false;
 	//DoRocketPunch();
+	DoRocketAiming();
 }
 
 void AGolemBossEnemy::DoPunchFireL()
@@ -313,8 +353,7 @@ void AGolemBossEnemy::DoPunchFireL()
 void AGolemBossEnemy::DoPunchFireR()
 {
 	DoRocketPunchR();
-	FTimerHandle CooldownTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &AGolemBossEnemy::EndPattern, 6.0f, false);
+	GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &AGolemBossEnemy::EndPattern, 3.0f, false);
 }
 
 void AGolemBossEnemy::PatternRotting()
@@ -333,6 +372,5 @@ void AGolemBossEnemy::PatternRotting()
 void AGolemBossEnemy::EndLaserAttack()
 {
 	bLaser = false;
-	FTimerHandle CooldownTimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, this, &AGolemBossEnemy::EndPattern, 2.0f, false);
 }

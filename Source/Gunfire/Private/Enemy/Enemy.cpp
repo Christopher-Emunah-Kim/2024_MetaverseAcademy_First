@@ -12,6 +12,12 @@
 #include "Engine/DamageEvents.h"
 #include "Widget/EnemyWidget.h"
 #include "Components/WidgetComponent.h"
+#include "PlayerWeapon/MyWeaponActor.h"
+
+#include "NiagaraSystem.h" //추가
+#include "NiagaraComponent.h" //추가
+#include "NiagaraFunctionLibrary.h" //추가
+#include "Widget/DamageAmt.h"
 
 // Sets default values
 AEnemy::AEnemy()
@@ -90,36 +96,69 @@ void AEnemy::PostInitializeComponents()
 			HPBarWidget->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			// 충돌체 제거
 			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+			if (DropWeaponFactory != nullptr)
+			{
+				auto* WeaponActor = GetWorld()->SpawnActor<AMyWeaponActor>(DropWeaponFactory);
+				WeaponActor->SetActorLocation(GetActorLocation());
+				WeaponActor->WeaponBoxComp->SetSimulatePhysics(true);
+				WeaponActor->WeaponBoxComp->AddForce(FVector(0, 0, 10000));
+				WeaponActor->WeaponSpawnEffect->SetActive(true);
+				WeaponActor->WeaponBoxComp->SetCollisionProfileName(TEXT("Weapon"));
+			}
 			});
 	}
 }
-//
-//void AEnemy::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
-//{
-//	// other가 총알이라면
-//	if (IsValid(Other) && Other->IsA(ABullet::StaticClass()))
-//	{
-//		// 총알을 없애고
-//		//Other->Destroy();
-//		UE_LOG(LogTemp, Warning, TEXT("Hit"));
-//
-//		// 데미지를 입는다.
-//
-//		if (MyComp->IsA<UCapsuleComponent>())
-//		{
-//			FDamageEvent DamageEvent;
-//			TakeDamage(10.0f, DamageEvent, nullptr, nullptr);
-//		}
-//	}
-//}
 
 float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	if (EnemyHPStat != nullptr && ! IsDead())
+
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
+		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+		FHitResult result = PointDamageEvent->HitInfo;
+		if (result.Component.IsValid())
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = nullptr;
+			
+			if (EnemyHPStat != nullptr && !IsDead())
+			{
+				if (result.Component->ComponentHasTag("Head"))
+				{
+					auto* DamageAmt = GetWorld()->SpawnActor<ADamageAmt>(CriticalDamageAmtFactory, result.Component->GetComponentLocation(), FRotator::ZeroRotator);
+					FinalDamage *= 2;
+					DamageAmt->SetDamageText(FinalDamage, true);
+				}
+				else
+				{
+					auto* DamageAmt = GetWorld()->SpawnActor<ADamageAmt>(DamageAmtFactory, GetActorLocation(), FRotator::ZeroRotator);
+					DamageAmt->SetDamageText(FinalDamage, false);
+				}
+
+				HPBarWidget->SetVisibility(true);
+				EnemyHPStat->SetDamage(FinalDamage);
+			}
+		}
+		else
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = nullptr;
+			auto* DamageAmt = GetWorld()->SpawnActor<ADamageAmt>(DamageAmtFactory, GetActorLocation(), FRotator::ZeroRotator);
+			HPBarWidget->SetVisibility(true);
+			EnemyHPStat->SetDamage(FinalDamage);
+			DamageAmt->SetDamageText(FinalDamage, false);
+		}
+	}
+	else
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = nullptr;
+		auto* DamageAmt = GetWorld()->SpawnActor<ADamageAmt>(DamageAmtFactory, GetActorLocation(), FRotator::ZeroRotator);
 		HPBarWidget->SetVisibility(true);
 		EnemyHPStat->SetDamage(FinalDamage);
+		DamageAmt->SetDamageText(FinalDamage, false);
 	}
 
 	return FinalDamage;
@@ -151,4 +190,8 @@ bool AEnemy::IsDead() const
 	{
 		return false;
 	}
+}
+
+void AEnemy::AimEnemy(bool bAiming)
+{
 }

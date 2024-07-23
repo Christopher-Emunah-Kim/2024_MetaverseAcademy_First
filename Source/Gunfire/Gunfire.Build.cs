@@ -11,9 +11,10 @@ public class Gunfire : ModuleRules
         
 
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
-			"NavigationSystem", "AIModule", "GameplayTasks" ,"UMG","Niagara", });
+			"NavigationSystem", "AIModule", "GameplayTasks" ,"UMG","Niagara","ControlRig", "AnimationCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+
+        PrivateDependencyModuleNames.AddRange(new string[] {  });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

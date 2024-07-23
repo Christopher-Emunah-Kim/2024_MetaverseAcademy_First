@@ -38,7 +38,21 @@ void AMeleeEnemy::BeginPlay()
 
 	if (EnemyHPStat != nullptr)
 		EnemyHPStat->InitHP(300);
-	UE_LOG(LogTemp, Warning, TEXT("MeleeEnemy BeginPlay"));
+
+	UMaterialInterface* Material = GetMesh()->GetMaterial(0);
+	if (Material)
+	{
+		// Dynamic Material Instance 생성
+		DynamicMaterialInstance = UMaterialInstanceDynamic::Create(Material, this);
+
+		// Static Mesh에 Dynamic Material Instance 적용
+		GetMesh()->SetMaterial(0, DynamicMaterialInstance);
+
+		// Emissive Color 파라미터 값을 변경합니다.
+		FLinearColor NewEmissiveColor = FLinearColor(0, 0, 0, 0);
+		DynamicMaterialInstance->SetVectorParameterValue(FName("_Color"), NewEmissiveColor);// Emissive Color 파라미터 값을 변경합니다.
+		DynamicMaterialInstance->SetScalarParameterValue(FName("_Expo"), 0);
+	}
 }
 
 void AMeleeEnemy::OnAttack()
@@ -84,6 +98,27 @@ void AMeleeEnemy::OnAttack()
 
 			FDamageEvent DamageEvent;
 			actor->TakeDamage(10, DamageEvent, GetController(), this);
+		}
+	}
+}
+
+void AMeleeEnemy::AimEnemy(bool bAiming)
+{
+	if (DynamicMaterialInstance)
+	{
+		if (bAiming)
+		{
+			// Emissive Color 파라미터 값을 변경합니다.
+			FLinearColor NewEmissiveColor = FLinearColor(5, 0, 0, 0);
+			DynamicMaterialInstance->SetVectorParameterValue(FName("_Color"), NewEmissiveColor);// Emissive Color 파라미터 값을 변경합니다.
+			DynamicMaterialInstance->SetScalarParameterValue(FName("_Expo"), 5);
+		}
+		else
+		{
+			// Emissive Color 파라미터 값을 변경합니다.
+			FLinearColor NewEmissiveColor = FLinearColor(0, 0, 0, 0);
+			DynamicMaterialInstance->SetVectorParameterValue(FName("_Color"), NewEmissiveColor);// Emissive Color 파라미터 값을 변경합니다.
+			DynamicMaterialInstance->SetScalarParameterValue(FName("_Expo"), 0);
 		}
 	}
 }

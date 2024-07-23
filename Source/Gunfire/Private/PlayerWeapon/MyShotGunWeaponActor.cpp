@@ -45,10 +45,17 @@ void AMyShotGunWeaponActor::WeaponAttack()
 		UE_LOG(LogTemp, Warning, TEXT("AMMO : %d"), CurrentWeaponAmmo);
 		GEngine->AddOnScreenDebugMessage(2, 1.0f, FColor::Blue, FString::Printf(TEXT("AMMO : %d"), CurrentWeaponAmmo));
 
-		if (CurrentWeaponAmmo == 0)
-		{
-			WeaponReload();
-		}
+		//총알 발사소리를 플레이한다.
+		UGameplayStatics::PlaySound2D(GetWorld(), WeaponShotSound);
+
+	}
+	else
+	{
+		//총알 빈탄창소리를 플레이한다.
+		UGameplayStatics::PlaySound2D(GetWorld(), WeaponNoBulletSound);
+
+		//그냥 자동 재장전을 원한다면..
+		//WeaponReload();
 	}
 }
 

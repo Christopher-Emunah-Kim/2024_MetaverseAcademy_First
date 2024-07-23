@@ -43,6 +43,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool IsDead() const;
 
+	virtual void AimEnemy(bool bAiming);
+
+
 	FOnAttackEndDelegate OnAttackEnd;
 
 
@@ -65,6 +68,14 @@ public:
 	UPROPERTY(EditAnywhere)
 	UAnimMontage* FireMontage;
 
-	UPROPERTY(EditAnywhere, Category = BulletFactory)
-	TSubclassOf<class AActor> DmgTextClass;
+	//현재 무기 액터 인스턴스
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AMyWeaponActor> DropWeaponFactory;
+
+	UMaterialInstanceDynamic* DynamicMaterialInstance;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ADamageAmt> DamageAmtFactory;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ADamageAmt> CriticalDamageAmtFactory;
 };

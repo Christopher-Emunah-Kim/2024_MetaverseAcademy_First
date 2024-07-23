@@ -36,7 +36,6 @@ void UEnemyStatComponent::SetHP(float NewHP)
 {
 	CurrentHP = NewHP;
 	OnHPChanged.Broadcast();
-	UE_LOG(LogTemp, Warning, TEXT("SetHP HP is %f"), CurrentHP);
 	if (CurrentHP < KINDA_SMALL_NUMBER)
 	{
 		CurrentHP = 0.0f;

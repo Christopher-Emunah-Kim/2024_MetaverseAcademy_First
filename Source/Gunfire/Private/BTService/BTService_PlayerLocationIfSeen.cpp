@@ -38,6 +38,8 @@ void UBTService_PlayerLocationIfSeen::TickNode(UBehaviorTreeComponent& OwnerComp
     if (OwnerComp.GetAIOwner()->LineOfSightTo(PlayerPawn))
     {
         OwnerComp.GetBlackboardComponent()->SetValueAsObject(GetSelectedBlackboardKey(), PlayerPawn);
+        // bAttacking true
+        //OwnerComp.GetBlackboardComponent()->SetValueAsBool(TEXT("bAttacking"), true);
     }
     else
     {

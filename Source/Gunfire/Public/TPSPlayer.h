@@ -48,46 +48,77 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	//데미지 처리 함수
-	
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 public:
+	void UpdateAimingEnemy();
+	class AEnemy* DetectedEnemy;
 
-#pragma region Component, Child Class Setting
+
+#pragma region Player Component Class Setting
 
 	//이동처리 컴포넌트 붙이기
 	UPROPERTY(VisibleAnywhere, Category = Component)
 	class UMyPlayerBaseComponent* playerMove;
 
-	//ShotGun Actor 인스턴스공장만들기
+#pragma endregion
+
+#pragma region Weapon Actor Change, Gain, Detach
+
+	//WeaponActor 인스턴스공장만들기(1)
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AMyWeaponActor> FirstWeaponFactory;
 
-	//SMG Actor 인스턴스 공장 만들기
+	//WeaponActor 인스턴스공장만들기(2)
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AMyWeaponActor> SecondWeaponFactory;
 
-	//SniperGun Actor 인스턴스 공장 만들기
+	//WeaponActor 인스턴스공장만들기(3)
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AMyWeaponActor> ThirdWeaponFactory;
-
 
 	//현재 무기 액터 인스턴스
 	UPROPERTY(EditAnywhere)
 	AMyWeaponActor* CurrentWeaponActor;
 
-#pragma endregion
-
-#pragma region Weapon Actor Change, Gain, Detach
-
 	//장착중인 무기액터 그룹 기억
 	UPROPERTY(EditAnywhere)
 	TArray<AMyWeaponActor*> EquippedWeapons;
+
 	//현재 무기가 몇번째 인덱스에 있는지 확인하는 변수
 	int32 CurrentWeaponIndex = 0;
+
 	//무기습득함수 선언
 	void GainWeapon();
+	void DetachWeapon();
+	bool IsDetaching = false;
+	FTimerHandle DetachTimerHandle;
 
+	//드랍된 무기 변수 인스턴스
+	UPROPERTY(EditAnywhere)
+	AMyWeaponActor* DetachWeaponActor;
+
+	//무기 변경 함수 선언
+	void ChangeWeapon(int32 slot);
+
+	//무기오버랩 이벤트처리함수
+	UFUNCTION()
+	void OnMyOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	
+	UFUNCTION()
+	void OnMyOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	//오버랩이벤트 WeaponActor 인스턴스
+	AMyWeaponActor* OverlappedWeapon;
+
+
+	//무기 변경을 위한 키입력 함수들 선언
+	void Weapon1();
+	void Weapon2();
+	void Weapon3();
+
+	//무기 탄창 재장전 함수 선언
+	void Reload();
 
 #pragma endregion
 
@@ -172,6 +203,7 @@ public:
 	//일반조준모드 크로스헤어UI 위젯 공장 변수 선언
 	UPROPERTY(EditDefaultsOnly, Category=UI)
 	TSubclassOf<class UUserWidget> crosshairUIFactory;
+
 	//크로스헤어 UI 위젯 인스턴스
 	UPROPERTY()
 	class UUserWidget* _crosshairUI;
@@ -179,8 +211,8 @@ public:
 	//스나이퍼 UI 위젯 공장 변수 선언
 	UPROPERTY(EditDefaultsOnly, Category=UI)
 	TSubclassOf<class UUserWidget> sniperUIFactory;
-	//스나이퍼 UI 위젯 인스턴스
 
+	//스나이퍼 UI 위젯 인스턴스
 	UPROPERTY()
 	class UUserWidget* _sniperUI;
 
@@ -244,19 +276,16 @@ public:
 	//총알 발사처리 함수
 	void InputFire();
 
-	////총알파편효과 공장 변수 선언
-	//UPROPERTY(EditAnywhere, Category=BulletEffect)
-	//class UParticleSystem* bulletEffectFactory;
-
-	////총구화염 파티클시스템 변수 선언
-	//UPROPERTY(EditAnywhere, Category =BulletEffect)
-	//class UParticleSystem* MuzzleFlash;
+	//발사중지함수
+	void StopFire();
 
 	//수류탄발사 이벤트처리 함수 선언
 	void InputGrenade();
+
     //수류탄 공장 변수 선언
 	UPROPERTY(EditDefaultsOnly, Category=Grenade)
 	TSubclassOf<class AGrenade> GrenadeFactory;
+
     //수류탄 발사처리 변수 선언
 	UPROPERTY(EditDefaultsOnly, Category=Grenade)
 	float ThrowingForce;
@@ -264,102 +293,25 @@ public:
 	//수류탄 타이머 설정
 	FTimerHandle GrenadeHandle;
 
-	////무기상태 저장 변수 선언
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
-	//TArray<EWeaponType> WeaponSlots;
-
-	////현재 장착 중인 무기 타입
-	//EWeaponType CurrentWeaponType;
-
-	//무기 변경 함수 선언
-	void ChangeWeapon(int32 slot);
-
-	//무기습득 이벤트처리함수 선언
-	UFUNCTION()
-	void OnMyOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	AMyWeaponActor* OverlappedWeapon;
-	
-	UFUNCTION()
-	void OnMyOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-
-	//무기 변경을 위한 키입력 함수들 선언
-	void Weapon1();
-	void Weapon2();
-	void Weapon3();
-
-	//무기 탄창 재장전 함수 선언
-	void Reload();
-	////무기 재장전 타이머 핸들 선언
-	//FTimerHandle ReloadTimerHandle;
-
-	////발사상태 확인 체크 변수
-	//bool bIsFiring;
-
-#pragma endregion
-
-#pragma region Weapon Ammo, Damage setting
-
-	////각 무기와 수류탄 데미지를 위한 변수 추가
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
-	float BaseGrenadeGunDamage;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
-	//float BaseSniperGunDamage;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
-	//float BaseSMGDamage;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
-	//float BaseShotGunDamage;
-
+	//수류탄 데미지
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
 	float BaseGrenadeDamage;
 
-	////각 무기별 탄창 설정 및 현재 탄약량 변수 설정
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Weapon)
-	//int32 MaxSMGAmmo = 70;
+	//유탄총 데미지
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
+	float BaseGrenadeGunDamage;
 
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Weapon)
-	//int32 CurrentSMGAmmo;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Weapon)
-	//int32 MaxSniperAmmo = 7;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
-	//int32 CurrentSniperAmmo;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
-	//int32 MaxShotGunAmmo = 10;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Weapon)
-	//int32 CurrentShotGunAmmo;
-
-#pragma endregion
-
-#pragma region GrenadeGun Setting 
-	//총 스켈레탈 메시 추가
+	//유탄총 스켈레탈 메시 추가
 	UPROPERTY(VisibleAnywhere, Category=GunMesh)
 	class USkeletalMeshComponent* gunMeshComp;
 
-	//총알공장 속성 추가
+	//유탄총 총알공장 속성 추가
 	UPROPERTY(EditDefaultsOnly, Category=BulletFactory)
 	TSubclassOf<class ABullet> bulletFactory;
 
 #pragma endregion
 
-#pragma region SniperGun Setting
-
-	////스나이퍼건 메시 추가
-	//UPROPERTY(VisibleAnywhere, Category=Mesh)
-	//class USkeletalMeshComponent* sniperGunComp;
-
-	////저격총 사용중 여부 체크
-	//bool bUsingSniperGun = false;
-	//
-	////SniperGun 발사처리함수(LineTrace사용)
-	//void HandleSniperFire();
+#pragma region Sniper Scope Mode Setting
 
 	//스나이퍼 조준 함수
 	void SniperAim();
@@ -389,68 +341,9 @@ public:
 	//줌모드시 변경 무기 위치/회전 목표
 	FTransform TargetGunTransform;
 
-	////스나이퍼 궤적 나이아가라 시스템 변수 선언
-	//UPROPERTY(EditAnywhere, Category=Effects)
-	//UNiagaraSystem* SniperTrail;
-
-	////스나이퍼 나이아가라 타이머
-	//FTimerHandle SniperEffectTimerHandle;
-
 #pragma endregion
 
-#pragma region SMGGun Setting 
-	
-	//SMG 총기 추가
-	//발사입력함수는 그대로 InputFire()사용
-	//발사중지함수
-	void StopFire();
-	////SMG발사속도
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=SMG)
-	//float SMGFireRate;
-	////SMG 사거리
-	//UPROPERTY(EditAnywhere,BlueprintReadWrite, Category=SMG)
-	//float SMGRange;
-	////SMG 스켈레탈 메시 추가
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=GunMesh)
-	//USkeletalMeshComponent* SMGMesh;
-
-	////SMG 자동발사타이머핸들
-	//FTimerHandle SMGFIreTimer;
-	////SMG 발사처리함수(LineTrace사용)
-	//void HandleSMGFire();
-
-	////SMG 궤적 나이아가라 시스템 변수 선언
-	//UPROPERTY(EditAnywhere, Category=Effects)
-	//UNiagaraSystem* SMGTrail;
-
-	////SMG 나이아가라 타이머
-	//FTimerHandle SMGEffectTimerHandle;
-
-#pragma endregion
-
-#pragma region ShotGun Setting
-
-	////ShotGun 스켈레탈 메시 추가
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GunMesh)
-	//USkeletalMeshComponent* ShotGunMesh;
-
-	////ShotGun 사거리
-	//UPROPERTY(EditAnywhere,BlueprintReadWrite, Category=ShotGun)
-	//float ShotGunRange;
-
-	////ShotGun 발사처리 함수
-	//void HandleShotGunFire();
-	//
-	////ShotGun 궤적 나이아가라 시스템 변수 선언
-	//UPROPERTY(EditAnywhere, Category=Effects)
-	//UNiagaraSystem* ShotGunTrail;
-
-	////ShotGun 나이아가라 타이머
-	//FTimerHandle ShotGunEffectTimerHandle;
-
-#pragma endregion
-
-#pragma region Animation Montage
+#pragma region Animation Montage Setting
 
 	//발사 애니메이션 몽타주 처리 변수
 	UPROPERTY(EditDefaultsOnly, Category=Montage)
@@ -462,53 +355,16 @@ public:
 
 #pragma endregion
 
-#pragma region THE GRAVE
+#pragma region Sound Setting
 
-	////애니메이션 추가로 불필요해진 흔들림 내용 제거
-	////이동시 메시흔들림처리함수 선언 
-	//void ApplyMeshBobbing(float DeltaTime, float BobbingIntensity);
-	////메시 흔들림 초기상태 확인을 위한 변수
-	//FVector InitialMeshLocation;
+	//Player Dash Sound 
+	UPROPERTY(EditAnywhere, Category = Sound)
+	class USoundBase* PlayerDashSound;
 
-	//대시 이벤트 발생시 흔들림 강도 조정 타이머 핸들
-	//FTimerHandle BobbingIntensityResetTimerHandle;
+	//Player Weapon Attach Sound 
+	UPROPERTY(EditAnywhere, Category = Sound)
+	class USoundBase* WeaponAttachSound;
 
-	////애니메이션 추가로 불필요해진 반동 함수 제거
-	////반동을 위한 카메라/무기 오프셋 값
-	//FVector RecoilOffset;
-
-	////반동을 위한 카메라/무기 회전값
-	//FRotator RecoilRotation;
-
-	////반동 애니메이션 타이머 핸들
-	//FTimerHandle RecoilTimerHandle;
-
-	//// 발사 시작 시 카메라의 트랜스폼 정보
-	//FTransform InitialCameraTransform; 
-
-	////반동 애니메이션 재설정 함수
-	//void ResetRecoil();
-
-	////반동 애니메이션 업데이트 함수
-	//void UpdateRecoil(float DeltaTime);
-
-	////반동의 크기 설정 함수
-	//void ApplyRecoil(FVector RecoilOffset, FRotator RecoilRotation, float RecoilDuration);
-
-	////SMG 발사 중 메시위치 복원 타이머
-	//FTimerHandle SMGResetTimerHandle;
-
-	////자동발사되는 SMG의 경우 별도 반동초기화
-	//void ResetSMGPosition();
-
-	////총기습득, 드랍 로직 구현
-	////현재 들고있는 무기를 바닥에 드랍하는 함수 선언
-	//void DropCurrentWeapon();
-	////바닥의 무기를 습득하는 함수 선언
-	//void PickupWeapon(USkeletalMeshComponent* WeaponMesh, EWeaponType NewWeaponType);
-
-	
 #pragma endregion
 
-	
 };

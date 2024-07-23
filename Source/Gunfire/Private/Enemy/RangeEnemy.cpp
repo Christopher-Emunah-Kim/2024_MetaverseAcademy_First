@@ -28,6 +28,21 @@ void ARangeEnemy::BeginPlay()
 	Super::BeginPlay();
 
 	EnemyHPStat->SetHP(200);
+
+	UMaterialInterface* Material = GetMesh()->GetMaterial(0);
+	if (Material)
+	{
+		// Dynamic Material Instance 생성
+		DynamicMaterialInstance = UMaterialInstanceDynamic::Create(Material, this);
+
+		// Static Mesh에 Dynamic Material Instance 적용
+		GetMesh()->SetMaterial(0, DynamicMaterialInstance);
+
+		// Emissive Color 파라미터 값을 변경합니다.
+		FLinearColor NewEmissiveColor = FLinearColor(0, 0, 0, 0);
+		DynamicMaterialInstance->SetVectorParameterValue(FName("_Color"), NewEmissiveColor);// Emissive Color 파라미터 값을 변경합니다.
+		DynamicMaterialInstance->SetScalarParameterValue(FName("_Expo"), 0);
+	}
 }
 
 void ARangeEnemy::OnAttack()
@@ -36,4 +51,25 @@ void ARangeEnemy::OnAttack()
 	FTransform firePosition = WeaponMesh->GetSocketTransform(TEXT("FirePosition"));
 	//총구위치에 총알공장이 위치하고, 거기에서 총알을 생성한다.
 	GetWorld()->SpawnActor<AProjectile>(bulletFactory, firePosition);
+}
+
+void ARangeEnemy::AimEnemy(bool bAiming)
+{
+	if (DynamicMaterialInstance)
+	{
+		if (bAiming)
+		{
+			// Emissive Color 파라미터 값을 변경합니다.
+			FLinearColor NewEmissiveColor = FLinearColor(5, 0, 0, 0);
+			DynamicMaterialInstance->SetVectorParameterValue(FName("_Color"), NewEmissiveColor);// Emissive Color 파라미터 값을 변경합니다.
+			DynamicMaterialInstance->SetScalarParameterValue(FName("_Expo"), 5);
+		}
+		else
+		{
+			// Emissive Color 파라미터 값을 변경합니다.
+			FLinearColor NewEmissiveColor = FLinearColor(0, 0, 0, 0);
+			DynamicMaterialInstance->SetVectorParameterValue(FName("_Color"), NewEmissiveColor);// Emissive Color 파라미터 값을 변경합니다.
+			DynamicMaterialInstance->SetScalarParameterValue(FName("_Expo"), 0);
+		}
+	}
 }

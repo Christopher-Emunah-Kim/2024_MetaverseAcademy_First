@@ -20,6 +20,7 @@ class GUNFIRE_API ARangeEnemy : public AEnemy
 	virtual void BeginPlay() override;
 		
 	virtual void OnAttack() override;
+	virtual void AimEnemy(bool bAiming);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USkeletalMeshComponent* WeaponMesh;

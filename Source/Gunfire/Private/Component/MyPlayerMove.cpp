@@ -4,6 +4,7 @@
 #include "Component/MyPlayerMove.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
+#include "Kismet/GameplayStatics.h"
 
 
 UMyPlayerMove::UMyPlayerMove()
@@ -40,7 +41,7 @@ void UMyPlayerMove::SetupInputBinding(UEnhancedInputComponent* PlayerInput)
 	//달리기입력 이벤트처리함수 바인딩
 	PlayerInput->BindAction(ia_Run, ETriggerEvent::Triggered, this, &UMyPlayerMove::InputRun);
 	//점프입력 이벤트처리함수 바인딩
-	PlayerInput->BindAction(ia_PlayerJump, ETriggerEvent::Triggered, this, &UMyPlayerMove::InputJump);
+	PlayerInput->BindAction(ia_PlayerJump, ETriggerEvent::Started, this, &UMyPlayerMove::InputJump);
 }
 
 
@@ -97,5 +98,8 @@ void UMyPlayerMove::InputRun()
 //Jump 이벤트처리함수 구현
 void UMyPlayerMove::InputJump(const struct FInputActionValue& inputValue)
 {
+	//점프소리를 플레이한다.
+	UGameplayStatics::PlaySound2D(GetWorld(), PlayerJumpSound);
+
 	me->Jump();
 }

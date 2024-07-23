@@ -75,7 +75,13 @@ void AMySMGWeaponActor::HandleSMGFire()
 	if (CurrentWeaponAmmo <= 0)
 	{
 		WeaponStopAttack();
-		WeaponReload();
+
+		//총알 빈탄창소리를 플레이한다.
+		UGameplayStatics::PlaySound2D(GetWorld(), WeaponNoBulletSound);
+
+		//그냥 자동 재장전을 원한다면..
+		//WeaponReload();
+
 		return;
 	}
 
@@ -146,10 +152,7 @@ void AMySMGWeaponActor::HandleSMGFire()
 		}
 
 	}
-	else
-	{
-
-	}
+	
 
 	// 총구 화염 파티클 생성
 	if (MuzzleFlash)
@@ -157,5 +160,8 @@ void AMySMGWeaponActor::HandleSMGFire()
 		FTransform MuzzleTransform = GunMesh->GetSocketTransform(TEXT("FirePosition"));
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, MuzzleTransform);
 	}
+
+	//총알 발사소리를 플레이한다.
+	UGameplayStatics::PlaySound2D(GetWorld(), WeaponShotSound);
 
 }

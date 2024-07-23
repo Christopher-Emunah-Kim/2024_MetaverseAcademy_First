@@ -21,6 +21,8 @@ public:
 
 	virtual void OnAttack() override;
 
+	virtual void AimEnemy(bool bAiming) override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* ShieldMeshComp;
 	

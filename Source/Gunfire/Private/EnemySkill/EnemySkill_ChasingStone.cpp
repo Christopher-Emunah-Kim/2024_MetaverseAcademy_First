@@ -10,6 +10,8 @@
 #include "Engine/DamageEvents.h"
 #include "GameFramework/DamageType.h"
 #include "Components/StaticMeshComponent.h"
+#include "EnemySkill/EnemySkill_RockPillar.h"
+#include "Widget/DamageAmt.h"
 
 // Sets default values
 AEnemySkill_ChasingStone::AEnemySkill_ChasingStone()
@@ -25,7 +27,7 @@ AEnemySkill_ChasingStone::AEnemySkill_ChasingStone()
 void AEnemySkill_ChasingStone::BeginPlay()
 {
 	Super::BeginPlay();
-	Hp = 110.0f;
+	Hp = 80.0f;
 }
 
 // Called every frame
@@ -39,8 +41,11 @@ float AEnemySkill_ChasingStone::TakeDamage(float DamageAmount, FDamageEvent cons
 {
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	Hp -= FinalDamage;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = nullptr;
+	auto* DamageAmt = GetWorld()->SpawnActor<ADamageAmt>(DamageAmtFactory, GetActorLocation(), FRotator::ZeroRotator);
+	DamageAmt->SetDamageText(FinalDamage, true);
 
-	UE_LOG(LogTemp, Warning, TEXT("HP : %f"), Hp);
 	if (Hp <= 0)
 	{
 		Destroy();
@@ -59,6 +64,13 @@ void AEnemySkill_ChasingStone::OnOverlapBegin(UPrimitiveComponent* OverlappedCom
 		UE_LOG(LogTemp, Warning, TEXT("Player Overlapped"));
 		Player->TakeDamage(10.0f, FDamageEvent(), nullptr, this);
 
+		// 스폰 액터
+		GetWorld()->SpawnActor<AActor>(ExplosionEffect, GetActorLocation(), GetActorRotation());
+		Destroy();
+	}
+
+	if (OtherActor->IsA<AEnemySkill_RockPillar>())
+	{
 		// 스폰 액터
 		GetWorld()->SpawnActor<AActor>(ExplosionEffect, GetActorLocation(), GetActorRotation());
 		Destroy();

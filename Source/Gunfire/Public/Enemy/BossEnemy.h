@@ -80,4 +80,7 @@ public:
 
 	UPROPERTY()
 	class UUserWidget* BossHPWidget;
+
+	UPROPERTY(EditAnywhere, Category = Sound)
+	class USoundBase* ChasingStoneSound;
 };

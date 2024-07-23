@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Enemy/Enemy.h"
+#include "ControlRig.h"
+#include "ControlRigComponent.h"
 #include "GolemBossEnemy.generated.h"
 
 /**
@@ -17,6 +19,7 @@ class GUNFIRE_API AGolemBossEnemy : public AEnemy
 	AGolemBossEnemy();
 	
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void PostInitializeComponents() override;
 
 	// 애니메이션 실행
@@ -45,6 +48,10 @@ class GUNFIRE_API AGolemBossEnemy : public AEnemy
 
 	// 패턴을 셔플.
 	void PatternRotting();
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "CppCall")
+	void DoRocketAiming();
+
 	UFUNCTION(BlueprintImplementableEvent, Category = "CppCall")
 	void DoRocketPunchL();
 
@@ -68,27 +75,36 @@ class GUNFIRE_API AGolemBossEnemy : public AEnemy
 	UPROPERTY()
 	TSubclassOf<AActor> LaserAttackClass;
 
-	// scene component
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UStaticMeshComponent* LeftPunch;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UStaticMeshComponent* RightPunch;
-
 	// 돌맹이 발사 위치
 	UPROPERTY(EditAnywhere)
 	USceneComponent* StoneSpawnPoint;
 
 	UPROPERTY(EditAnywhere)
 	class UStaticMeshComponent* Heart;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* LeftPunch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMeshComponent* RightPunch;
+
 	UPROPERTY(EditAnywhere, Category = UI)
 	TSubclassOf<class UUserWidget> BossHPWidgetClass;
 
 	UPROPERTY()
 	class UUserWidget* BossHPWidget;
-	
 
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* EyeBoxComponent;
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* HeartBoxComponent;
+	
+	FTimerHandle CooldownTimerHandle;
+
+	FVector OriginalPunchLocationL;
+	FVector OriginalPunchLocationR;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bPillar;
 	
@@ -109,4 +125,19 @@ class GUNFIRE_API AGolemBossEnemy : public AEnemy
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bSummon;
+	UPROPERTY(EditAnywhere, Category = Sound)
+	class USoundBase* ChasingStoneSound;
+
+	// 이펙트 추가
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<class AActor> SmashEffectFactory;
+
+	// 오른손 스매시 이펙트 생성 위치
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USceneComponent* SmashEffectPointRight;
+
+	// 왼손 스매시 이펙트 생성 위치
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USceneComponent* SmashEffectPointLeft;
+
 };

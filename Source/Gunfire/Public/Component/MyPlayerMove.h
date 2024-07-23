@@ -60,4 +60,8 @@ public:
 	//달리기 이벤트 처리 함수
 	void InputRun();
 
+	//Player Jump Sound 
+	UPROPERTY(EditAnywhere, Category = Sound)
+	class USoundBase* PlayerJumpSound;
+
 };
